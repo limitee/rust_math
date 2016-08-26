@@ -15,6 +15,32 @@ impl BaseFloat for f64 {
 }
 
 #[derive(Copy, Clone, Debug)]
+pub struct Vector3<T> {
+    e1:T,
+    e2:T,
+    e3:T,
+}
+
+impl<T> Into<[T;3]> for Vector3<T> {
+    
+    fn into(self) -> [T; 3] {
+        [self.e1, self.e2, self.e3]
+    }
+
+}
+
+impl<T:BaseFloat> Vector3<T> {
+
+    pub fn new(e1:T, e2:T, e3:T) -> Vector3<T> {
+        Vector3 {
+            e1: e1,
+            e2: e2,
+            e3: e3,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct Matrix2<T> {
     e11:T,
     e12:T,
@@ -89,6 +115,49 @@ impl<T:BaseFloat> Matrix4<T> {
             e43: e43,
             e44: e44,
         }
+    }
+
+    /**
+     * 视图矩阵
+     * pos, 所在位置
+     * at, 看向的位置
+     * up, 向上的方向
+     */
+    pub fn look_at(pos:Vector3<f32>, at:Vector3<f32>, up:Vector3<f32>) -> Matrix4<f32> {
+        let f = {
+            let len = at.e1*at.e1 + at.e2*at.e2 + at.e3*at.e3;
+            let len = len.sqrt();
+            [at.e1/len, at.e2/len, at.e3/len]
+        };
+        let s = 
+        [
+            up.e2 * f[2] - up.e3 * f[1],
+            up.e3 * f[0] - up.e1 * f[2],
+            up.e1 * f[1] - up.e2 * f[0]
+        ];
+        let s_norm = {
+            let len = s[0]*s[0] + s[1]*s[1] + s[2]*s[2];
+            let len = len.sqrt();
+            [s[0]/len, s[1]/len, s[2]/len]
+        };
+        let u = 
+        [
+            f[1]*s_norm[2] - f[2]*s_norm[1],
+            f[2]*s_norm[0] - f[0]*s_norm[2],
+            f[0]*s_norm[1] - f[1]*s_norm[0],
+        ];
+        let p = 
+        [
+            -pos.e1*s_norm[0] - pos.e2*s_norm[1] - pos.e3*s_norm[2],
+            -pos.e1*u[0] - pos.e2*u[1] - pos.e3*u[2],
+            -pos.e1*f[0] - pos.e2*f[1] - pos.e3*f[2],
+        ];
+        Matrix4::new(
+            s_norm[0], u[0], f[0], 0.0,
+            s_norm[1], u[1], f[1], 0.0,
+            s_norm[2], u[2], f[2], 0.0,
+            p[0], p[1], p[2], 1.0_f32
+        ) 
     }
 }
 
